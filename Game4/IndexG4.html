@@ -1,0 +1,201 @@
+<!-- IndexG4.html - Memory Spiel (farbige Karten) mit Score, Highscore zentriert, Touch- und Keyboard-Steuerung, vollständig im Viewport skaliert -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Memory</title>
+  <style>
+    :root { --primary: #4a90e2; --ui-height: 50px; }
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0; padding: 0;
+      width: 100vw; height: 100vh;
+      display: flex; flex-direction: column;
+      background: #0f1624; color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+    #ui {
+      position: relative;
+      height: var(--ui-height);
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 10px;
+    }
+    #ui div { font-size: 1.2rem; }
+    #highDiv {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.2rem;
+    }
+    #back {
+      padding: 8px 12px;
+      background: var(--primary);
+      color: #fff; border: none; border-radius: 4px;
+      cursor: pointer;
+      position: absolute; top: 10px; right: 10px;
+      z-index: 10;
+    }
+    #game4 {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 10px;
+      width: 100%; height: calc(100vh - var(--ui-height));
+      padding: 10px;
+    }
+    .card {
+      position: relative;
+      width: 100%; height: 100%;
+      perspective: 1000px;
+      cursor: pointer;
+      outline: none;
+    }
+    .face {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      backface-visibility: hidden;
+      border-radius: 8px;
+      transition: transform 0.3s;
+    }
+    .back {
+      background: #4a4a4a;
+      transform: rotateY(0deg);
+    }
+    .front {
+      transform: rotateY(-180deg);
+    }
+    .card.flipped .back { transform: rotateY(180deg); }
+    .card.flipped .front { transform: rotateY(0deg); }
+    .matched { cursor: default; }
+    /* Farbklassen */
+    .color-0 { background: #e74c3c; }
+    .color-1 { background: #8e44ad; }
+    .color-2 { background: #3498db; }
+    .color-3 { background: #1abc9c; }
+    .color-4 { background: #f1c40f; }
+    .color-5 { background: #e67e22; }
+    .color-6 { background: #2ecc71; }
+    .color-7 { background: #d35400; }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div>Moves: <span id="score4">0</span></div>
+    <div id="highDiv">Highscore: <span id="high4">-</span></div>
+  </div>
+  <button id="back" role="button" tabindex="0">Hauptmenü</button>
+  <div id="game4"></div>
+  <script>
+    // Werte für 8 Paare
+    const values = [...Array(8).keys(), ...Array(8).keys()];
+    let grid = [], first = null, second = null, moves = 0, matches = 0;
+    const scoreEl = document.getElementById('score4');
+    const highEl = document.getElementById('high4');
+    const backBtn = document.getElementById('back');
+    let high4 = localStorage.getItem('high4');
+    high4 = high4 !== null ? parseInt(high4, 10) : null;
+    highEl.textContent = high4 !== null ? high4 : '-';
+    const container = document.getElementById('game4');
+    
+    // Navigation zum Hauptmenü
+    backBtn.addEventListener('click', () => location.href = '../index.html');
+    backBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') location.href = '../index.html';
+    });
+
+    // Durcheinander-Mischen
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // Spiel initialisieren
+    function init() {
+      grid = shuffle(values.slice());
+      container.innerHTML = '';
+      moves = 0; matches = 0;
+      first = second = null;
+      scoreEl.textContent = moves;
+
+      grid.forEach((value) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.value = value;
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+
+        const backFace = document.createElement('div');
+        backFace.className = 'face back';
+        card.appendChild(backFace);
+
+        const frontFace = document.createElement('div');
+        frontFace.className = `face front color-${value}`;
+        card.appendChild(frontFace);
+
+        card.addEventListener('click', onFlip);
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') onFlip(e);
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    // Karte umdrehen
+    function onFlip(event) {
+      const card = event.currentTarget;
+      if (card.classList.contains('flipped') || card.classList.contains('matched') || second) return;
+      card.classList.add('flipped');
+
+      if (!first) {
+        first = card;
+        return;
+      }
+
+      second = card;
+      moves++;
+      scoreEl.textContent = moves;
+
+      if (first.dataset.value === second.dataset.value) {
+        first.classList.add('matched');
+        second.classList.add('matched');
+        matches += 2;
+        resetSelection();
+        checkEnd();
+      } else {
+        setTimeout(() => {
+          first.classList.remove('flipped');
+          second.classList.remove('flipped');
+          resetSelection();
+        }, 800);
+      }
+    }
+
+    // Auswahl zurücksetzen
+    function resetSelection() {
+      first = second = null;
+    }
+
+    // Spielende prüfen
+    function checkEnd() {
+      if (matches === grid.length) {
+        if (high4 === null || moves < high4) {
+          high4 = moves;
+          localStorage.setItem('high4', high4);
+          highEl.textContent = high4;
+        }
+        setTimeout(init, 1000);
+      }
+    }
+
+    // Starte das Spiel
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!-- IndexG2.html - Neon Runner mit Score, Back-Button und Touch-Steuerung -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neon Runner</title>
+  <style>
+    :root { --primary: #4a90e2; }
+    body, html { margin:0; padding:0; overflow:hidden; background:#0f1624; color:#fff; font-family:sans-serif; touch-action: manipulation; }
+    canvas { display:block; }
+    #ui { position:absolute; top:10px; left:10px; z-index:10; }
+    #ui div { margin-bottom:5px; }
+    #back { position:absolute; top:10px; right:10px; padding:8px 12px; background:var(--primary); color:#fff; border:none; border-radius:4px; cursor:pointer; z-index:10; }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div>Score: <span id="score2">0</span></div>
+    <div>Highscore: <span id="high2">0</span></div>
+  </div>
+  <button id="back" onclick="location.href='../index.html'">Hauptmenü</button>
+  <canvas id="game2"></canvas>
+
+  <script>
+    // Setup Canvas
+    const canvas2 = document.getElementById('game2');
+    const ctx2 = canvas2.getContext('2d');
+    function resize2(){ canvas2.width = window.innerWidth; canvas2.height = window.innerHeight; }
+    window.addEventListener('resize', resize2);
+    resize2();
+
+    // Score
+    let score2 = 0;
+    const scoreEl2 = document.getElementById('score2');
+    const highEl2 = document.getElementById('high2');
+    let high2 = parseInt(localStorage.getItem('high2')) || 0;
+    highEl2.textContent = high2;
+
+    // Runner
+    let runner = { x:50, y:canvas2.height - 100, w:50, h:50, velY:0, grav:1.2 };
+    let obstacles = [];
+    let frame2 = 0;
+
+    // Controls: Keyboard and Touch
+    function jump() {
+      if (runner.y + runner.h >= canvas2.height) {
+        runner.velY = -20;
+      }
+    }
+    document.addEventListener('keydown', e => { if (e.code === 'Space') jump(); });
+    canvas2.addEventListener('click', () => jump());
+    canvas2.addEventListener('touchstart', e => { e.preventDefault(); jump(); });
+
+    // Game Loop
+    function loop2() {
+      frame2++;
+
+      // Spawn obstacles
+      if (frame2 % 100 === 0) {
+        let size = 30 + Math.random() * 50;
+        obstacles.push({ x: canvas2.width, y: canvas2.height - size, w: size, h: size, passed: false });
+      }
+
+      // Physics
+      runner.velY += runner.grav;
+      runner.y += runner.velY;
+      if (runner.y + runner.h > canvas2.height) {
+        runner.y = canvas2.height - runner.h;
+        runner.velY = 0;
+      }
+
+      // Clear
+      ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+      // Draw runner
+      ctx2.fillStyle = '#39FF14';
+      ctx2.fillRect(runner.x, runner.y, runner.w, runner.h);
+
+      // Obstacles and collisions
+      obstacles.forEach((o, i) => {
+        o.x -= 6;
+        ctx2.fillStyle = '#FF073A';
+        ctx2.fillRect(o.x, o.y, o.w, o.h);
+
+        // Score increment
+        if (!o.passed && o.x + o.w < runner.x) {
+          score2++;
+          scoreEl2.textContent = score2;
+          o.passed = true;
+        }
+
+        // Collision detection
+        if (runner.x < o.x + o.w && runner.x + runner.w > o.x && runner.y < o.y + o.h && runner.y + runner.h > o.y) {
+          reset2();
+        }
+
+        // Remove off-screen
+        if (o.x + o.w < 0) obstacles.splice(i, 1);
+      });
+
+      requestAnimationFrame(loop2);
+    }
+
+    function reset2() {
+      // Update Highscore
+      if (score2 > high2) {
+        high2 = score2;
+        localStorage.setItem('high2', high2);
+        highEl2.textContent = high2;
+      }
+      // Reset values
+      score2 = 0;
+      scoreEl2.textContent = score2;
+      obstacles = [];
+      runner.y = canvas2.height - runner.h;
+      runner.velY = 0;
+      frame2 = 0;
+    }
+
+    loop2();
+  </script>
+</body>
+</html>

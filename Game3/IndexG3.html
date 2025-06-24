@@ -1,0 +1,165 @@
+<!-- IndexG3.html - Cosmic Shooter (immer im Hochformat) -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Cosmic Shooter</title>
+  <style>
+    :root { --primary: #4a90e2; }
+    body, html {
+      margin:0; padding:0;
+      background:#000;
+      display:flex; justify-content:center; align-items:center;
+      height:100vh; overflow:hidden;
+      touch-action: none;
+    }
+    /* Canvas immer im Hochformat skalieren */
+    canvas {
+      width: auto;
+      height: 100vh;
+      max-width: 100vw;
+      background: #0f1624;
+      display: block;
+    }
+    #ui, #back, #shoot, #moveLeft, #moveRight {
+      position:absolute; z-index:10;
+    }
+    #ui { top:10px; left:10px; color:#fff; font-family:sans-serif; }
+    #ui div { margin-bottom:5px; }
+    #back { top:10px; right:10px; padding:8px 12px; background:var(--primary); color:#fff; border:none; border-radius:4px; cursor:pointer; }
+    #shoot { bottom:20px; right:20px; padding:15px; background:var(--primary); color:#fff; border:none; border-radius:50%; font-size:1rem; touch-action: manipulation; }
+    #moveLeft, #moveRight {
+      bottom:20px; width:50px; height:50px; background:rgba(74,144,226,0.8);
+      color:#fff; border:none; border-radius:50%; font-size:1.5rem;
+    }
+    #moveLeft { left:20px; }
+    #moveRight { left:90px; }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div>Score: <span id="score3">0</span></div>
+    <div>Highscore: <span id="high3">0</span></div>
+  </div>
+  <button id="back" onclick="location.href='../index.html'">Hauptmenü</button>
+  <button id="shoot">🔥</button>
+  <button id="moveLeft">◀️</button>
+  <button id="moveRight">▶️</button>
+  <canvas id="game3"></canvas>
+
+  <script>
+    const canvas3 = document.getElementById('game3');
+    const ctx3 = canvas3.getContext('2d');
+    
+    function setupCanvas() {
+      // Immer im Hochformat: volle Höhe nutzen, Breite proportional
+      canvas3.height = window.innerHeight;
+      const aspect = canvas3.width / canvas3.height;
+      canvas3.width = canvas3.height * (window.innerWidth / window.innerHeight);
+    }
+    window.addEventListener('resize', () => {
+      canvas3.height = window.innerHeight;
+      canvas3.width = window.innerWidth;
+      resetShip();
+    });
+    // Initiale Größe
+    canvas3.width = window.innerWidth;
+    canvas3.height = window.innerHeight;
+
+    // Score
+    let score3 = 0, frame3 = 0;
+    const scoreEl3 = document.getElementById('score3');
+    const highEl3 = document.getElementById('high3');
+    let high3 = parseInt(localStorage.getItem('high3')) || 0;
+    highEl3.textContent = high3;
+
+    // Ship
+    const ship = { w:40, h:60, x:0, y:0, speed:5, movingLeft:false, movingRight:false };
+    function resetShip(){ ship.x = (canvas3.width - ship.w) / 2; ship.y = canvas3.height - ship.h - 10; }
+    resetShip();
+
+    let bullets = [], aliens = [];
+
+    // Shooting
+    function shoot(){ bullets.push({ x: ship.x + ship.w/2 - 5, y: ship.y, w:10, h:20, speed:7 }); }
+
+    // Buttons - continuous movement
+    const btnLeft = document.getElementById('moveLeft');
+    const btnRight = document.getElementById('moveRight');
+    btnLeft.addEventListener('touchstart', e=>{ e.preventDefault(); ship.movingLeft = true; });
+    btnLeft.addEventListener('touchend', e=>{ ship.movingLeft = false; });
+    btnRight.addEventListener('touchstart', e=>{ e.preventDefault(); ship.movingRight = true; });
+    btnRight.addEventListener('touchend', e=>{ ship.movingRight = false; });
+    btnLeft.addEventListener('mousedown', ()=>ship.movingLeft = true);
+    btnLeft.addEventListener('mouseup', ()=>ship.movingLeft = false);
+    btnRight.addEventListener('mousedown', ()=>ship.movingRight = true);
+    btnRight.addEventListener('mouseup', ()=>ship.movingRight = false);
+
+    // Shoot Button
+    const shootBtn = document.getElementById('shoot');
+    shootBtn.addEventListener('touchstart', e=>{ e.preventDefault(); shoot(); });
+    shootBtn.addEventListener('mousedown', shoot);
+
+    // Keyboard
+    document.addEventListener('keydown', e=>{
+      if(e.code==='ArrowLeft') ship.movingLeft=true;
+      if(e.code==='ArrowRight') ship.movingRight=true;
+      if(e.code==='Space') shoot();
+    });
+    document.addEventListener('keyup', e=>{
+      if(e.code==='ArrowLeft') ship.movingLeft=false;
+      if(e.code==='ArrowRight') ship.movingRight=false;
+    });
+
+    // Game Loop
+    function loop(){
+      frame3++;
+      if(ship.movingLeft) ship.x = Math.max(0, ship.x - ship.speed);
+      if(ship.movingRight) ship.x = Math.min(canvas3.width - ship.w, ship.x + ship.speed);
+
+      if(frame3 % 60 === 0){
+        const size = 40;
+        let maxCount = Math.min(1 + Math.floor(frame3 / 600), 7);
+        let count = Math.floor(Math.random() * maxCount) + 1;
+        const minX = (canvas3.width - size) * 0.25;
+        const maxX = minX + (canvas3.width - size) * 0.5;
+        for(let i=0; i<count; i++){
+          const xPos = Math.random() * (maxX - minX) + minX;
+          aliens.push({ x: xPos, y: -size, w: size, h: size, speed: 1 + Math.random() });
+        }
+      }
+
+      ctx3.clearRect(0,0,canvas3.width,canvas3.height);
+      ctx3.fillStyle='#00BFFF'; ctx3.fillRect(ship.x, ship.y, ship.w, ship.h);
+
+      bullets.forEach((b,i)=>{
+        b.y -= b.speed;
+        if(b.y + b.h < 0) bullets.splice(i,1);
+        ctx3.fillStyle='#FFF'; ctx3.fillRect(b.x,b.y,b.w,b.h);
+      });
+
+      aliens.forEach((a,ai)=>{
+        a.y += a.speed;
+        ctx3.fillStyle='#FF4500'; ctx3.fillRect(a.x,a.y,a.w,a.h);
+        bullets.forEach((b,bi)=>{
+          if(b.x < a.x + a.w && b.x + b.w > a.x && b.y < a.y + a.h && b.y + b.h > a.y){
+            aliens.splice(ai,1); bullets.splice(bi,1);
+            score3++; scoreEl3.textContent = score3;
+          }
+        });
+        if(a.y + a.h > canvas3.height) reset();
+      });
+
+      requestAnimationFrame(loop);
+    }
+
+    function reset(){
+      if(score3 > high3){ high3 = score3; localStorage.setItem('high3', high3); highEl3.textContent = high3; }
+      bullets = []; aliens = []; score3 = 0; scoreEl3.textContent = score3; frame3 = 0; resetShip();
+    }
+
+    loop();
+  </script>
+</body>
+</html>

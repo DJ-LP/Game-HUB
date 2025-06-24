@@ -1,0 +1,106 @@
+<!-- Game Portal IndexG1.html with Score and Back Button -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flying Chicken</title>
+  <style>
+    body, html { margin:0; padding:0; overflow:hidden; background:#0f1624; color:#fff; font-family:sans-serif; }
+    canvas { display:block; }
+    #ui { position:absolute; top:10px; left:10px; z-index:10; }
+    #ui div { margin-bottom:5px; }
+    #back { position:absolute; top:10px; right:10px; padding:8px 12px; background:var(--primary,#4a90e2); color:#fff; border:none; border-radius:4px; cursor:pointer; z-index:10; }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div>Score: <span id="score">0</span></div>
+    <div>Highscore: <span id="high">0</span></div>
+  </div>
+  <button id="back" onclick="location.href='../index.html'">Hauptmenü</button>
+  <canvas id="game1"></canvas>
+  <script>
+    // Setup
+    const canvas1 = document.getElementById('game1');
+    const ctx1 = canvas1.getContext('2d');
+    function resize1(){ canvas1.width=window.innerWidth; canvas1.height=window.innerHeight; }
+    window.addEventListener('resize', resize1); resize1();
+
+    // Score
+    let score = 0;
+    const scoreEl = document.getElementById('score');
+    const highEl = document.getElementById('high');
+    let high = parseInt(localStorage.getItem('high1')) || 0;
+    highEl.textContent = high;
+
+    // Game objects
+    let bird = { x:100, y:canvas1.height/2, w:40, h:30, grav:0.6, lift:-12, vel:0 };
+    let pipes = [], frame = 0;
+
+    document.addEventListener('click',() => bird.vel = bird.lift);
+
+    function loop1(){
+      frame++;
+      bird.vel += bird.grav;
+      bird.y += bird.vel;
+
+      // Add pipes and increment score
+      if(frame % 90 === 0){
+        let gap = 150;
+        let top = Math.random()*(canvas1.height - gap - 100) + 50;
+        pipes.push({ x:canvas1.width, w:60, top:top, bottom:canvas1.height - top - gap, passed:false });
+      }
+
+      ctx1.clearRect(0,0,canvas1.width,canvas1.height);
+      ctx1.fillStyle = '#FFD700';
+      ctx1.fillRect(bird.x, bird.y, bird.w, bird.h);
+
+      pipes.forEach((p, i) => {
+        p.x -= 3;
+        ctx1.fillStyle = '#228B22';
+        ctx1.fillRect(p.x, 0, p.w, p.top);
+        ctx1.fillRect(p.x, canvas1.height - p.bottom, p.w, p.bottom);
+
+        // Score when passing pipe
+        if(!p.passed && p.x + p.w < bird.x){
+          score++;
+          scoreEl.textContent = score;
+          p.passed = true;
+        }
+
+        // Collision detection
+        if(bird.x < p.x + p.w && bird.x + bird.w > p.x && (bird.y < p.top || bird.y + bird.h > canvas1.height - p.bottom)){
+          reset1();
+        }
+
+        // Remove off-screen pipes
+        if(p.x + p.w < 0) pipes.splice(i,1);
+      });
+
+      // Bird out of bounds
+      if(bird.y + bird.h > canvas1.height || bird.y < 0) reset1();
+
+      requestAnimationFrame(loop1);
+    }
+
+    function reset1(){
+      // Update highscore
+      if(score > high){
+        high = score;
+        localStorage.setItem('high1', high);
+        highEl.textContent = high;
+      }
+      // Reset game
+      score = 0;
+      scoreEl.textContent = score;
+      bird.y = canvas1.height/2;
+      bird.vel = 0;
+      pipes = [];
+      frame = 0;
+    }
+
+    loop1();
+  </script>
+</body>
+</html>

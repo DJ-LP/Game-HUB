@@ -1,0 +1,164 @@
+<!-- index.html – Game Portal mit Sprachumschalter (English default, Deutsch optional) -->
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Game Portal</title>
+  <style>
+    :root {
+      --primary: #4a90e2;
+      --secondary: #50e3c2;
+      --bg: #0f1624;
+      --text: #ffffff;
+      --card-bg: rgba(255, 255, 255, 0.1);
+      --card-hover: rgba(255, 255, 255, 0.2);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      padding: 1rem;
+      text-align: center;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      position: relative;
+    }
+    #lang-switch {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: 1px solid var(--text);
+      color: var(--text);
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+    header h1 { font-size: 2rem; }
+    main {
+      flex: 1;
+      padding: 2rem;
+      display: grid;
+      grid-gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      text-align: center;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .card:hover {
+      background: var(--card-hover);
+      transform: translateY(-5px);
+    }
+    .card h2 { margin-bottom: 0.5rem; font-size: 1.25rem; }
+    .card p { font-size: 0.9rem; margin-bottom: 1rem; }
+    .card a {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: var(--primary);
+      color: var(--text);
+      border-radius: 0.5rem;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+    .card a:hover { background: var(--secondary); }
+    footer {
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.8rem;
+      background: #08101a;
+    }
+    #reset-scores {
+      background: none;
+      border: 1px solid var(--text);
+      color: var(--text);
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+    @media (orientation: landscape) {
+      header h1 { font-size: 2.5rem; }
+      .card h2 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 data-en="Welcome to the Game Portal" data-de="Willkommen zum Game Portal">Welcome to the Game Portal</h1>
+    <button id="lang-switch">DE</button>
+  </header>
+  <main>
+    <div class="card">
+      <h2 data-en="Flying Chicken" data-de="Fliegendes Huhn">Flying Chicken</h2>
+      <p data-en="Just like Flappy Bird: steer your chicken through obstacles!"
+         data-de="Gleiche wie Flappy Bird: Steuere dein Huhn durch alle Hindernisse!">
+        Just like Flappy Bird: steer your chicken through obstacles!
+      </p>
+      <a href="Game1/IndexG1.html" data-en="Play" data-de="Spielen">Play</a>
+    </div>
+    <div class="card">
+      <h2 data-en="Neon Runner" data-de="Neon Läufer">Neon Runner</h2>
+      <p data-en="Run through futuristic tracks, dodge obstacles and collect points."
+         data-de="Laufe durch futuristische Läufe, weiche Hindernissen aus und sammle Punkte.">
+        Run through futuristic tracks, dodge obstacles and collect points.
+      </p>
+      <a href="Game2/IndexG2.html" data-en="Play" data-de="Spielen">Play</a>
+    </div>
+    <div class="card">
+      <h2 data-en="Cosmic Shooter" data-de="Cosmic Shooter">Cosmic Shooter</h2>
+      <p data-en="Face endless alien waves in this vertical scrolling shooter."
+         data-de="Stelle dich endlosen Alien-Wellen in diesem vertikal scrollenden Shooter.">
+        Face endless alien waves in this vertical scrolling shooter.
+      </p>
+      <a href="Game3/IndexG3.html" data-en="Play" data-de="Spielen">Play</a>
+    </div>
+    <div class="card">
+      <h2 data-en="Puzzle Pop" data-de="Puzzle Pop">Puzzle Pop</h2>
+      <p data-en="Match same-colored blocks and reach the next level."
+         data-de="Verbinde gleichfarbige Blöcke und erreiche das nächste Level.">
+        Match same-colored blocks and reach the next level.
+      </p>
+      <a href="Game4/IndexG4.html" data-en="Play" data-de="Spielen">Play</a>
+    </div>
+  </main>
+  <footer>
+    <button id="reset-scores" data-en="Reset Highscores" data-de="Highscores zurücksetzen">Reset Highscores</button>
+  </footer>
+
+  <script>
+    (function() {
+      const switchBtn = document.getElementById('lang-switch');
+      const resetBtn = document.getElementById('reset-scores');
+      let current = 'en';
+      function updateTexts() {
+        document.documentElement.lang = current;
+        document.querySelectorAll('[data-en]').forEach(el => {
+          el.textContent = el.getAttribute(`data-${current}`);
+        });
+        switchBtn.textContent = current === 'en' ? 'DE' : 'EN';
+      }
+      switchBtn.addEventListener('click', () => {
+        current = current === 'en' ? 'de' : 'en';
+        updateTexts();
+      });
+      resetBtn.addEventListener('click', () => {
+        ['high1','high2','high3','high4'].forEach(key => localStorage.removeItem(key));
+        alert(current === 'en' ? 'Highscores reset.' : 'Highscores zurückgesetzt.');
+      });
+      updateTexts();
+    })();
+  </script>
+
+</body>
+</html>
